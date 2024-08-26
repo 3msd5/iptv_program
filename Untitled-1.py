@@ -91,7 +91,6 @@ def on_channel_select(event):
 
 def play_channel(url):
     """ Verilen URL'den kanalı oynatır. """
-    # VLC video oynatıcı penceresini oluştur
     global player, player_window
     player_window = tk.Toplevel(root)
     player_window.title("Video Oynatıcı")
@@ -115,8 +114,76 @@ def play_channel(url):
     player.set_media(media)
     player.play()
 
-    # Pencere kapatıldığında video oynatıcıyı durdur
+    # Kontrol çubuğunu oluştur
+    controls_frame = tk.Frame(player_window)
+    controls_frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+    play_button = tk.Button(controls_frame, text="▶️", command=play_video)
+    play_button.pack(side=tk.LEFT)
+
+    pause_button = tk.Button(controls_frame, text="⏸️", command=pause_video)
+    pause_button.pack(side=tk.LEFT)
+
+    stop_button = tk.Button(controls_frame, text="■", command=stop_video)
+    stop_button.pack(side=tk.LEFT)
+
+    rewind_button = tk.Button(controls_frame, text="⏪", command=rewind_video)
+    rewind_button.pack(side=tk.LEFT)
+
+    forward_button = tk.Button(controls_frame, text="⏩", command=forward_video)
+    forward_button.pack(side=tk.LEFT)
+
+    volume_up_button = tk.Button(controls_frame, text="🔊+", command=volume_up)
+    volume_up_button.pack(side=tk.LEFT)
+
+    volume_down_button = tk.Button(controls_frame, text="🔊-", command=volume_down)
+    volume_down_button.pack(side=tk.LEFT)
+
     player_window.protocol("WM_DELETE_WINDOW", on_player_close)
+
+
+def play_video():
+    """ Video oynatmayı başlatır. """
+    if player:
+        player.play()
+
+
+def pause_video():
+    """ Video oynatmayı duraklatır. """
+    if player:
+        player.pause()
+
+
+def stop_video():
+    """ Video oynatmayı durdurur. """
+    if player:
+        player.stop()
+
+
+def rewind_video():
+    """ Video geri sarar. """
+    if player:
+        player.set_time(max(player.get_time() - 10000, 0))  # 10 saniye geri sarar
+
+
+def forward_video():
+    """ Video ileri sarar. """
+    if player:
+        player.set_time(player.get_time() + 10000)  # 10 saniye ileri sarar
+
+
+def volume_up():
+    """ Ses seviyesini artırır. """
+    if player:
+        current_volume = player.audio_get_volume()
+        player.audio_set_volume(min(current_volume + 10, 100))  # Ses seviyesini %100'ü aşmayacak şekilde artırır
+
+
+def volume_down():
+    """ Ses seviyesini düşürür. """
+    if player:
+        current_volume = player.audio_get_volume()
+        player.audio_set_volume(max(current_volume - 10, 0))  # Ses seviyesini %0'ın altına düşürmez
 
 
 def on_player_close():
