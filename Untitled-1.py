@@ -92,6 +92,7 @@ def on_channel_select(event):
 def play_channel(url):
     """ Verilen URL'den kanalı oynatır. """
     # VLC video oynatıcı penceresini oluştur
+    global player, player_window
     player_window = tk.Toplevel(root)
     player_window.title("Video Oynatıcı")
     player_window.geometry("800x600")
@@ -113,6 +114,18 @@ def play_channel(url):
     media = vlc.Media(url)
     player.set_media(media)
     player.play()
+
+    # Pencere kapatıldığında video oynatıcıyı durdur
+    player_window.protocol("WM_DELETE_WINDOW", on_player_close)
+
+
+def on_player_close():
+    """ Video penceresi kapatıldığında çağrılır. """
+    global player
+    if player:
+        player.stop()  # Video oynatıcıyı durdur
+        player.release()  # Kaynakları serbest bırak
+    player_window.destroy()  # Pencereyi kapat
 
 
 # GUI oluşturma
