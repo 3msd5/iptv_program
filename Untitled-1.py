@@ -63,8 +63,13 @@ def on_channel_select(event):
     if selection:
         selected_channel = channel_listbox.item(selection[0])
         channel_name = selected_channel['values'][0]
-        channel_url = [c['url'] for g in groups.values() for c in g if c['name'] == channel_name][0]
-        play_channel(channel_url)
+        # Find the URL from the group and channel list
+        channel_url = next((c['url'] for g in groups.values() for c in g if c['name'] == channel_name), None)
+        if channel_url:
+            play_channel(channel_url, channel_name)
+        else:
+            print(f"Error: URL for channel '{channel_name}' not found.")
+
 
 def format_time(milliseconds):
     """ Milisaniyeyi HH:MM:SS formatına dönüştürür. """
@@ -77,11 +82,13 @@ def format_time(milliseconds):
         return f"{minutes}:{seconds:02}"
 
 
-def play_channel(url):
-    """ Verilen URL'den kanalı oynatır. """
+def play_channel(url, channel_name):
+    """ Verilen URL'den kanalı oynatır ve pencere başlığını dinamik olarak ayarlar. """
     global player, player_window, progress_slider, volume_slider, update_progress_id, elapsed_label, duration_label
+
+    # Create new window for video playback
     player_window = tk.Toplevel(root)
-    player_window.title("Video Oynatıcı")
+    player_window.title(f"{channel_name}")  # Set window title dynamically
     player_window.geometry("1280x720")
     player_window.configure(bg='black')
 
