@@ -66,9 +66,20 @@ def on_channel_select(event):
         channel_url = [c['url'] for g in groups.values() for c in g if c['name'] == channel_name][0]
         play_channel(channel_url)
 
+def format_time(milliseconds):
+    """ Milisaniyeyi HH:MM:SS formatına dönüştürür. """
+    seconds = int(milliseconds / 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours > 0:
+        return f"{hours}:{minutes:02}:{seconds:02}"
+    else:
+        return f"{minutes}:{seconds:02}"
+
+
 def play_channel(url):
     """ Verilen URL'den kanalı oynatır. """
-    global player, player_window, progress_slider, volume_slider
+    global player, player_window, progress_slider, volume_slider, update_progress_id, elapsed_label, duration_label
     player_window = tk.Toplevel(root)
     player_window.title("Video Oynatıcı")
     player_window.geometry("1280x720")
@@ -116,24 +127,49 @@ def play_channel(url):
     volume_down_button.pack(side=tk.LEFT)
 
     # Add progress and volume sliders
-    progress_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=300, bg='lightgrey', sliderlength=15)
+    progress_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=300, bg='lightgrey',
+                               sliderlength=15)
     progress_slider.pack(side=tk.LEFT, padx=5)
-    progress_slider.bind("<Motion>", update_progress_slider)
+    progress_slider.bind("<ButtonRelease-1>", set_movie_time)  # Handle slider release to set time
 
-    volume_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=150, bg='lightgrey', sliderlength=15)
+    volume_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=150, bg='lightgrey',
+                             sliderlength=15)
     volume_slider.set(initial_volume)  # Set initial value of volume slider to 75
     volume_slider.pack(side=tk.LEFT, padx=5)
     volume_slider.bind("<Motion>", update_volume_slider)
 
+    # Add time labels
+    elapsed_label = tk.Label(controls_frame, text="00:00:00", bg='grey', fg='white')
+    elapsed_label.pack(side=tk.LEFT, padx=5)
+
+    duration_label = tk.Label(controls_frame, text="00:00:00", bg='grey', fg='white')
+    duration_label.pack(side=tk.LEFT, padx=5)
+
+    # Update progress every 500 milliseconds
+    update_progress_id = player_window.after(500, update_progress_slider)
+
     player_window.protocol("WM_DELETE_WINDOW", on_player_close)
 
-def update_progress_slider(event):
+
+def update_progress_slider():
     """ Progress slider'ı günceller. """
     if player:
         total_time = player.get_length()
         current_time = player.get_time()
         if total_time > 0:
             progress_slider.set((current_time / total_time) * 100)
+            elapsed_label.config(text=format_time(current_time))
+            duration_label.config(text=format_time(total_time))
+        # Update progress slider periodically
+        global update_progress_id
+        update_progress_id = player_window.after(500, update_progress_slider)
+
+def set_movie_time(event):
+    """ Slider'dan seçilen zamana video zamanını ayarlar. """
+    if player:
+        total_time = player.get_length()
+        new_time = (progress_slider.get() / 100) * total_time
+        player.set_time(int(new_time))
 
 def update_volume_slider(event):
     """ Volume slider'ı günceller. """
@@ -184,10 +220,11 @@ def volume_down():
 
 def on_player_close():
     """ Video penceresi kapatıldığında çağrılır. """
-    global player
+    global player, update_progress_id
     if player:
         player.stop()
         player.release()
+    player_window.after_cancel(update_progress_id)
     player_window.destroy()
 
 
