@@ -68,7 +68,7 @@ def on_channel_select(event):
 
 def play_channel(url):
     """ Verilen URL'den kanalı oynatır. """
-    global player, player_window
+    global player, player_window, progress_slider, volume_slider
     player_window = tk.Toplevel(root)
     player_window.title("Video Oynatıcı")
     player_window.geometry("1280x720")
@@ -111,7 +111,30 @@ def play_channel(url):
     volume_down_button = ttk.Button(controls_frame, text="🔊-", command=volume_down)
     volume_down_button.pack(side=tk.LEFT)
 
+    # Add progress and volume sliders
+    progress_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=300, bg='lightgrey', sliderlength=15)
+    progress_slider.pack(side=tk.LEFT, padx=5)
+    progress_slider.bind("<Motion>", update_progress_slider)
+
+    volume_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=150, bg='lightgrey', sliderlength=15)
+    volume_slider.pack(side=tk.LEFT, padx=5)
+    volume_slider.bind("<Motion>", update_volume_slider)
+
     player_window.protocol("WM_DELETE_WINDOW", on_player_close)
+
+def update_progress_slider(event):
+    """ Progress slider'ı günceller. """
+    if player:
+        total_time = player.get_length()
+        current_time = player.get_time()
+        if total_time > 0:
+            progress_slider.set((current_time / total_time) * 100)
+
+def update_volume_slider(event):
+    """ Volume slider'ı günceller. """
+    if player:
+        volume = volume_slider.get()
+        player.audio_set_volume(volume)
 
 def play_video():
     """ Video oynatmayı başlatır. """
@@ -143,12 +166,14 @@ def volume_up():
     if player:
         current_volume = player.audio_get_volume()
         player.audio_set_volume(min(current_volume + 10, 100))
+        volume_slider.set(player.audio_get_volume())
 
 def volume_down():
     """ Ses seviyesini düşürür. """
     if player:
         current_volume = player.audio_get_volume()
         player.audio_set_volume(max(current_volume - 10, 0))
+        volume_slider.set(player.audio_get_volume())
 
 def on_player_close():
     """ Video penceresi kapatıldığında çağrılır. """
@@ -191,7 +216,7 @@ style.configure('Treeview.Heading',
                 font=('Helvetica', 12, 'bold'))  # Font settings
 
 style.configure('Treeview',
-                background='#333333',  # Background color of the Treeview
+                background='#ffffff',  # Background color of the Treeview
                 foreground='#000',  # Text color of the Treeview
                 rowheight=25)  # Row height of the Treeview
 
