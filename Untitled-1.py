@@ -1,8 +1,10 @@
+import json
 import tkinter as tk
 from tkinter import ttk, filedialog
 import vlc
 import os
 from PIL import Image, ImageTk
+import json
 
 
 def parse_m3u(m3u_data):
@@ -31,8 +33,29 @@ def load_m3u_file():
                 global groups
                 groups = parse_m3u(m3u_data)
                 update_group_listbox()
+                save_file_path(file_path)  # Kaydet dosya yolunu
         except Exception as e:
             print(f"Dosya okuma hatası: {e}")
+
+def save_file_path(file_path):
+    """ M3U dosya yolunu bir dosyada saklar. """
+    with open('last_m3u_file.txt', 'w') as file:
+        file.write(file_path)
+
+def load_saved_file_path():
+    """ Saklanan M3U dosya yolunu okur. """
+    if os.path.exists('last_m3u_file.txt'):
+        with open('last_m3u_file.txt', 'r') as file:
+            file_path = file.read().strip()
+            if file_path and os.path.exists(file_path):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        m3u_data = f.read()
+                        global groups
+                        groups = parse_m3u(m3u_data)
+                        update_group_listbox()
+                except Exception as e:
+                    print(f"Dosya okuma hatası: {e}")
 
 def update_group_listbox():
     """ Ana grup listbox'ını günceller. """
@@ -69,7 +92,6 @@ def on_channel_select(event):
             play_channel(channel_url, channel_name)
         else:
             print(f"Error: URL for channel '{channel_name}' not found.")
-
 
 def format_time(milliseconds):
     """ Milisaniyeyi HH:MM:SS formatına dönüştürür. """
@@ -251,7 +273,6 @@ header_color = '#b0b0b0'
 listbox_bg = '#ffffff'
 listbox_fg = '#333333'
 
-
 # Create a custom style for ttk widgets
 style = ttk.Style()
 style.theme_use('clam')
@@ -302,8 +323,7 @@ channel_listbox.column('Name', width=600, anchor='w')  # Align text to the left
 channel_listbox.pack(fill=tk.BOTH, expand=True)
 channel_listbox.bind('<<TreeviewSelect>>', on_channel_select)
 
-
 groups = {}
-update_group_listbox()
+load_saved_file_path()  # Load previously saved M3U file path
 
 root.mainloop()
