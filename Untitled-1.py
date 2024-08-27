@@ -87,6 +87,10 @@ def play_channel(url):
     player.set_media(media)
     player.play()
 
+    # Set initial volume to 75
+    initial_volume = 75
+    player.audio_set_volume(initial_volume)
+
     controls_frame = tk.Frame(player_window, bg='grey')
     controls_frame.pack(fill=tk.X, side=tk.BOTTOM)
 
@@ -117,6 +121,7 @@ def play_channel(url):
     progress_slider.bind("<Motion>", update_progress_slider)
 
     volume_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=150, bg='lightgrey', sliderlength=15)
+    volume_slider.set(initial_volume)  # Set initial value of volume slider to 75
     volume_slider.pack(side=tk.LEFT, padx=5)
     volume_slider.bind("<Motion>", update_volume_slider)
 
@@ -165,15 +170,17 @@ def volume_up():
     """ Ses seviyesini artırır. """
     if player:
         current_volume = player.audio_get_volume()
-        player.audio_set_volume(min(current_volume + 10, 100))
-        volume_slider.set(player.audio_get_volume())
+        new_volume = min(current_volume + 10, 100)
+        player.audio_set_volume(new_volume)
+        volume_slider.set(new_volume)
 
 def volume_down():
     """ Ses seviyesini düşürür. """
     if player:
         current_volume = player.audio_get_volume()
-        player.audio_set_volume(max(current_volume - 10, 0))
-        volume_slider.set(player.audio_get_volume())
+        new_volume = max(current_volume - 10, 0)
+        player.audio_set_volume(new_volume)
+        volume_slider.set(new_volume)
 
 def on_player_close():
     """ Video penceresi kapatıldığında çağrılır. """
@@ -182,6 +189,7 @@ def on_player_close():
         player.stop()
         player.release()
     player_window.destroy()
+
 
 # GUI oluşturma
 root = tk.Tk()
