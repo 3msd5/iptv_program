@@ -1,14 +1,10 @@
-import json
 import tkinter as tk
 from tkinter import ttk, filedialog
 import vlc
 import os
-from PIL import Image, ImageTk
-import json
-
 
 def parse_m3u(m3u_data):
-    """ M3U verilerini işler ve grupları ve kanalları ayrıştırır. """
+    #M3U verilerini ayırma
     groups = {}
     lines = m3u_data.splitlines()
     for i, line in enumerate(lines):
@@ -24,7 +20,7 @@ def parse_m3u(m3u_data):
     return groups
 
 def load_m3u_file():
-    """ M3U dosyasını yükler ve içeriğini okur. """
+    #M3U okuma ve yükleme
     file_path = filedialog.askopenfilename(filetypes=[("M3U files", "*.m3u")])
     if file_path:
         try:
@@ -38,12 +34,12 @@ def load_m3u_file():
             print(f"Dosya okuma hatası: {e}")
 
 def save_file_path(file_path):
-    """ M3U dosya yolunu bir dosyada saklar. """
+    #M3U dosya yolunu txt ile kaydeder
     with open('last_m3u_file.txt', 'w') as file:
         file.write(file_path)
 
 def load_saved_file_path():
-    """ Saklanan M3U dosya yolunu okur. """
+    #txt ye kaydedilen yeri okur
     if os.path.exists('last_m3u_file.txt'):
         with open('last_m3u_file.txt', 'r') as file:
             file_path = file.read().strip()
@@ -58,13 +54,13 @@ def load_saved_file_path():
                     print(f"Dosya okuma hatası: {e}")
 
 def update_group_listbox():
-    """ Ana grup listbox'ını günceller. """
+
     group_listbox.delete(0, tk.END)
     for group in groups:
         group_listbox.insert(tk.END, group)
 
 def update_channels(group):
-    """ Seçilen grup ve alt gruptaki kanalları günceller. """
+
     channel_listbox.delete(*channel_listbox.get_children())
     if group in groups:
         channels = groups[group]
@@ -74,19 +70,19 @@ def update_channels(group):
         print(f"Seçilen grup bulunamadı: {group}")
 
 def on_group_select(event):
-    """ Ana grup seçildiğinde çağrılır. """
+
     selection = group_listbox.curselection()
     if selection:
         selected_group = group_listbox.get(selection)
         update_channels(selected_group)
 
 def on_channel_select(event):
-    """ Kanal seçildiğinde çağrılır. """
+
     selection = channel_listbox.selection()
     if selection:
         selected_channel = channel_listbox.item(selection[0])
         channel_name = selected_channel['values'][0]
-        # Find the URL from the group and channel list
+        #Find the URL from the group and channel list
         channel_url = next((c['url'] for g in groups.values() for c in g if c['name'] == channel_name), None)
         if channel_url:
             play_channel(channel_url, channel_name)
@@ -94,7 +90,6 @@ def on_channel_select(event):
             print(f"Error: URL for channel '{channel_name}' not found.")
 
 def format_time(milliseconds):
-    """ Milisaniyeyi HH:MM:SS formatına dönüştürür. """
     seconds = int(milliseconds / 1000)
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
@@ -105,10 +100,9 @@ def format_time(milliseconds):
 
 
 def play_channel(url, channel_name):
-    """ Verilen URL'den kanalı oynatır ve pencere başlığını dinamik olarak ayarlar. """
     global player, player_window, progress_slider, volume_slider, update_progress_id, elapsed_label, duration_label
 
-    # Create new window for video playback
+    #Create new window for video playback
     player_window = tk.Toplevel(root)
     player_window.title(f"{channel_name}")  # Set window title dynamically
     player_window.geometry("1280x720")
@@ -127,7 +121,7 @@ def play_channel(url, channel_name):
     player.set_media(media)
     player.play()
 
-    # Set initial volume to 75
+    #Set initial volume to 75
     initial_volume = 75
     player.audio_set_volume(initial_volume)
 
@@ -155,7 +149,7 @@ def play_channel(url, channel_name):
     volume_down_button = ttk.Button(controls_frame, text="🔊-", command=volume_down)
     volume_down_button.pack(side=tk.LEFT)
 
-    # Add progress and volume sliders
+    #Add progress and volume sliders
     progress_slider = tk.Scale(controls_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=300, bg='lightgrey',
                                sliderlength=15)
     progress_slider.pack(side=tk.LEFT, padx=5)
@@ -167,21 +161,21 @@ def play_channel(url, channel_name):
     volume_slider.pack(side=tk.LEFT, padx=5)
     volume_slider.bind("<Motion>", update_volume_slider)
 
-    # Add time labels
+    #Add time labels
     elapsed_label = tk.Label(controls_frame, text="00:00:00", bg='grey', fg='white')
     elapsed_label.pack(side=tk.LEFT, padx=5)
 
     duration_label = tk.Label(controls_frame, text="00:00:00", bg='grey', fg='white')
     duration_label.pack(side=tk.LEFT, padx=5)
 
-    # Update progress every 500 milliseconds
+    #Update every 500 milliseconds
     update_progress_id = player_window.after(500, update_progress_slider)
 
     player_window.protocol("WM_DELETE_WINDOW", on_player_close)
 
 
 def update_progress_slider():
-    """ Progress slider'ı günceller. """
+
     if player:
         total_time = player.get_length()
         current_time = player.get_time()
