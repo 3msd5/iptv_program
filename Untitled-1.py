@@ -2,13 +2,12 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 import vlc
 import os
+from PIL import Image, ImageTk
 
 
 def parse_m3u(m3u_data):
     """ M3U verilerini işler ve grupları ve kanalları ayrıştırır. """
     groups = {}
-    current_group = None
-
     lines = m3u_data.splitlines()
     for i, line in enumerate(lines):
         if line.startswith('#EXTINF:'):
@@ -17,40 +16,29 @@ def parse_m3u(m3u_data):
             if url_index < len(lines) and not lines[url_index].startswith('#'):
                 url = lines[url_index]
                 group_info = line.split('group-title="', 1)[-1].split('"', 1)[0]
-
                 if group_info not in groups:
                     groups[group_info] = []
-
                 groups[group_info].append({'name': channel_info, 'url': url})
-
     return groups
-
 
 def load_m3u_file():
     """ M3U dosyasını yükler ve içeriğini okur. """
     file_path = filedialog.askopenfilename(filetypes=[("M3U files", "*.m3u")])
     if file_path:
-        print(f"Dosya yolu: {file_path}")
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 m3u_data = file.read()
-                print(f"Dosya içeriği:\n{m3u_data[:500]}...")
                 global groups
                 groups = parse_m3u(m3u_data)
-                print(f"Gruplar: {groups}")
                 update_group_listbox()
         except Exception as e:
             print(f"Dosya okuma hatası: {e}")
-    else:
-        print("Dosya seçilmedi.")
-
 
 def update_group_listbox():
     """ Ana grup listbox'ını günceller. """
     group_listbox.delete(0, tk.END)
     for group in groups:
         group_listbox.insert(tk.END, group)
-
 
 def update_channels(group):
     """ Seçilen grup ve alt gruptaki kanalları günceller. """
@@ -62,17 +50,12 @@ def update_channels(group):
     else:
         print(f"Seçilen grup bulunamadı: {group}")
 
-
 def on_group_select(event):
     """ Ana grup seçildiğinde çağrılır. """
     selection = group_listbox.curselection()
     if selection:
         selected_group = group_listbox.get(selection)
-        print(f"Seçilen ana grup: {selected_group}")
         update_channels(selected_group)
-    else:
-        print("Ana grup seçilmedi.")
-
 
 def on_channel_select(event):
     """ Kanal seçildiğinde çağrılır. """
@@ -81,22 +64,17 @@ def on_channel_select(event):
         selected_channel = channel_listbox.item(selection[0])
         channel_name = selected_channel['values'][0]
         channel_url = [c['url'] for g in groups.values() for c in g if c['name'] == channel_name][0]
-        print(f"Seçilen Kanal: {channel_name}")
-        print(f"URL: {channel_url}")
         play_channel(channel_url)
-    else:
-        print("Kanal seçilmedi.")
-
 
 def play_channel(url):
     """ Verilen URL'den kanalı oynatır. """
     global player, player_window
     player_window = tk.Toplevel(root)
     player_window.title("Video Oynatıcı")
-    player_window.geometry("800x600")
+    player_window.geometry("1280x720")
+    player_window.configure(bg='black')
 
     player = vlc.MediaPlayer()
-
     embed = tk.Frame(player_window, bg='black')
     embed.pack(fill=tk.BOTH, expand=True)
 
@@ -109,7 +87,7 @@ def play_channel(url):
     player.set_media(media)
     player.play()
 
-    controls_frame = tk.Frame(player_window)
+    controls_frame = tk.Frame(player_window, bg='grey')
     controls_frame.pack(fill=tk.X, side=tk.BOTTOM)
 
     play_button = ttk.Button(controls_frame, text="▶️", command=play_video)
@@ -135,36 +113,30 @@ def play_channel(url):
 
     player_window.protocol("WM_DELETE_WINDOW", on_player_close)
 
-
 def play_video():
     """ Video oynatmayı başlatır. """
     if player:
         player.play()
-
 
 def pause_video():
     """ Video oynatmayı duraklatır. """
     if player:
         player.pause()
 
-
 def stop_video():
     """ Video oynatmayı durdurur. """
     if player:
         player.stop()
-
 
 def rewind_video():
     """ Video geri sarar. """
     if player:
         player.set_time(max(player.get_time() - 10000, 0))
 
-
 def forward_video():
     """ Video ileri sarar. """
     if player:
         player.set_time(player.get_time() + 10000)
-
 
 def volume_up():
     """ Ses seviyesini artırır. """
@@ -172,13 +144,11 @@ def volume_up():
         current_volume = player.audio_get_volume()
         player.audio_set_volume(min(current_volume + 10, 100))
 
-
 def volume_down():
     """ Ses seviyesini düşürür. """
     if player:
         current_volume = player.audio_get_volume()
         player.audio_set_volume(max(current_volume - 10, 0))
-
 
 def on_player_close():
     """ Video penceresi kapatıldığında çağrılır. """
@@ -188,19 +158,42 @@ def on_player_close():
         player.release()
     player_window.destroy()
 
-
 # GUI oluşturma
 root = tk.Tk()
-root.title("IPTV Uygulaması")
-root.geometry("800x600")
+root.title("IPTV Player Made By MSD")
+root.geometry("900x800")
 
+# Set a background color for the main window
+root.configure(bg='#e0e0e0')
+
+# Define colors
+bg_color = '#e0e0e0'
+fg_color = '#333333'
+button_color = '#ffffff'
+header_color = '#b0b0b0'
+listbox_bg = '#ffffff'
+listbox_fg = '#333333'
+
+
+# Create a custom style for ttk widgets
 style = ttk.Style()
 style.theme_use('clam')
+style.configure('TButton', background=button_color, foreground=fg_color)
+style.configure('TLabel', background=bg_color, foreground=fg_color)
+style.configure('TFrame', background=bg_color)
+style.configure('Treeview', background=listbox_bg, foreground=listbox_fg)
+style.configure('Treeview.Heading', background=header_color, foreground=fg_color)
+style.map('TButton', background=[('active', '#999999')])
+# Define custom styles for the Treeview headings
+style.configure('Treeview.Heading',
+                background='#e0e0e0',  # Background color of the heading
+                foreground='#333333',  # Text color of the heading
+                font=('Helvetica', 12, 'bold'))  # Font settings
 
-root.option_add("*TButton.Font", "Helvetica 12")
-root.option_add("*TLabel.Font", "Helvetica 12")
-root.option_add("*TEntry.Font", "Helvetica 12")
-root.option_add("*Listbox.Font", "Helvetica 12")
+style.configure('Treeview',
+                background='#333333',  # Background color of the Treeview
+                foreground='#000',  # Text color of the Treeview
+                rowheight=25)  # Row height of the Treeview
 
 info_frame = ttk.Frame(root, padding="10")
 info_frame.pack(fill='x')
@@ -214,11 +207,9 @@ group_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 group_label = ttk.Label(group_frame, text="Gruplar", font=('Helvetica', 14, 'bold'))
 group_label.pack(anchor=tk.W)
 
-group_listbox = tk.Listbox(group_frame, height=25, width=30)  # Added width parameter here
+group_listbox = tk.Listbox(group_frame, height=25, width=30, bg=listbox_bg, fg=listbox_fg)
 group_listbox.pack(fill=tk.BOTH, expand=True)
 group_listbox.bind('<<ListboxSelect>>', on_group_select)
-
-
 
 channel_frame = ttk.Frame(root)
 channel_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -226,11 +217,14 @@ channel_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 channel_label = ttk.Label(channel_frame, text="Kanallar", font=('Helvetica', 14, 'bold'))
 channel_label.pack(anchor=tk.W)
 
-channel_listbox = ttk.Treeview(channel_frame, columns=('Name',), show='headings')
-channel_listbox.heading('Name', text='Kanal Adı')
-channel_listbox.column('Name', width=600)
+# Create a Treeview without column headings
+channel_listbox = ttk.Treeview(channel_frame, columns=('Name',), show='headings')  # Use 'headings' to avoid tree column header
+channel_listbox.heading('Name', text='Grup İçi Kanallar')  # Remove heading text
+channel_listbox.column('Name', width=600, anchor='w')  # Align text to the left
+
 channel_listbox.pack(fill=tk.BOTH, expand=True)
 channel_listbox.bind('<<TreeviewSelect>>', on_channel_select)
+
 
 groups = {}
 update_group_listbox()
